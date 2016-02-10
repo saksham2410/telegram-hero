@@ -146,39 +146,3 @@ telegram.api = function (opts) {
 
   return fns;
 };
-
-// if (false && !module.parent) {
-//   telegram.send({
-//     token: '162843747:AAECX8aKx0RsTPN9KLN51q25nAnxOc-GY2w',
-//     to: 142650420,
-//     method: 'sendMessage',
-//     data: {
-//       text: 'Sending something else'
-//     }
-//   }, function (err, res) {
-//     if (err) console.error(err);
-//     else console.log(res);
-//     process.exit(err ? 1 : 0);
-//   });
-// }
-
-// if (true && !module.parent) {
-//   var bodyParser = require('body-parser');
-//   var express = require('express');
-//
-//   var app = express();
-//   app.use('/', bodyParser.json(), telegram.api({
-//     debug: true,
-//     token: 'my-awesome-token',
-//     incoming: function (message) {
-//       console.log('Incoming message:', message);
-//       return {
-//         method: 'sendMessage',
-//         text: 'LOL'
-//       };
-//     }
-//   }));
-//   app.listen(3000, 'localhost', function () {
-//     console.log('Listening on localhost:3000');
-//   });
-// }
