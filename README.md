@@ -93,9 +93,15 @@ app.use('/incoming/:key', bodyParser.json(), telegram.api({
  */
 app.use('/incoming/:name/:key', bodyParser.json(), telegram.api({
   auth: function (req, res, next) {
-    // This code is definitely not production-safe!
-    if (req.param.name !== 'megaman') return next(new Error('You\'re not Megaman :('));
-    if (req.param.key !== '3788fe92142a99ab9e72274f7664bcb9') return next(new Error('You are not Megaman :/'));
+    /**
+     * This code is definitely not production-safe!
+     */
+    if (req.param.name !== 'megaman') {
+      return next(new Error('You\'re not Megaman :('));
+    }
+    if (req.param.key !== '3788fe92142a99ab9e72274f7664bcb9') {
+      return next(new Error('You are not Megaman :/'));
+    }
 
     next();
   },
