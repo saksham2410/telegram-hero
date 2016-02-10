@@ -1,5 +1,3 @@
-var async = require('async');
-var extend = require('extend');
 var request = require('request');
 var telegram = module.exports = {};
 
@@ -12,51 +10,48 @@ telegram.configure = function (opts) {
   if (opts.hasOwnProperty('token')) DEFAULTS.token = opts.token;
 };
 
+var extendOmit = function (omit_props) {
+  var base_obj = {};
+  omit_props = Array.isArray(omit_props) ? omit_props : [ omit_props ];
+
+  for (var i = 1; i < arguments.length; i++) if (arguments[i]) {
+    for (var prop in arguments[i]) if (arguments[i].hasOwnProperty(prop) && omit_props.indexOf(prop) < 0) {
+      base_obj[prop] = arguments[i][prop];
+    }
+  }
+
+  return base_obj;
+};
+
 telegram.send = function (opts, callback) {
   if (DEFAULTS.token && !opts.token) opts.token = DEFAULTS.token;
 
-  opts = extend({}, opts);
   if (!opts.token) return callback(new Error('Missing `token` property'));
   if (!opts.to) return callback(new Error('Missing `to` property'));
-  if (opts.multi && !Array.isArray(opts.multi)) return callback(new Error('`multi` property should be an array'));
 
-  var chat_ids = Array.isArray(opts.to) ? opts.to : [ opts.to ];
-  var messages = [];
+  if (!opts.message) return callback(new Error('Missing `message` property'));
+  if (typeof opts.message !== 'object') return callback(new Error('Incorrect type for `message` property'));
+  if (!opts.message.method) return callback(new Error('Missing `method` property in `message` object'));
+  if (typeof opts.message.method !== 'string') return callback(new Error(
+    'Incorrect type for `message` property in `message` object'
+  ));
 
-  if (!opts.multi) messages = [ {
-    method: opts.method,
-    data: opts.data
-  } ];
-
-  var err_suffix = ' for' + (messages.length > 1 ? ' multi' : '') + ' message';
-  for (var i = 0; i < messages.length; i++) {
-    if (!messages[i].method) return callback(new Error('Missing `method`' + err_suffix));
-    if (!messages[i].data) return callback(new Error('Missing `data`' + err_suffix));
-  }
-
-  async.map(chat_ids, function (chat_id, mapCb) {
-    async.map(messages, function (message, multiCb) {
-      request({
-        method: 'POST',
-        url: 'https://api.telegram.org/bot' + opts.token + '/' + message.method,
-        headers: {
-          'Accept': 'application/json'
-        },
-        json: true,
-        formData: extend({}, message.data, {
-          chat_id: chat_id
-        })
-      }, function (err, res, body) {
-        if (!err && body && body.ok && body.result) multiCb(null, body.result);
-        else if (body && body.description) {
-          body.description = body.description.replace('[Error]:', '').trim();
-          multiCb(null, { error: body.description });
-        }
-        else if (err && err.message) multiCb(null, { error: err.message });
-        else multiCb(null, { error: 'Something went wrong' });
-      });
-    }, mapCb);
-  }, callback);
+  request({
+    method: 'POST',
+    url: 'https://api.telegram.org/bot' + opts.token + '/' + opts.message.method,
+    headers: {
+      'Accept': 'application/json'
+    },
+    json: true,
+    formData: extendOmit('method', opts.message, {
+      chat_id: opts.to
+    })
+  }, function (err, res, body) {
+    if (!err && body && body.ok && body.result) callback(null, body.result);
+    else if (body && !body.ok && body.description) callback(new Error(body.description.replace('[Error]:', '').trim()));
+    else if (err) callback(err);
+    else callback(new Error('Something went wrong'));
+  });
 };
 
 telegram.api = function (opts) {

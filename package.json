@@ -28,8 +28,6 @@
     "telegram"
   ],
   "dependencies": {
-    "async": "^1.5.2",
-    "extend": "^3.0.0",
     "request": "^2.69.0"
   },
   "devDependencies": {
