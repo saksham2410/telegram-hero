@@ -1,0 +1,45 @@
+{
+  "name": "telegram-hero",
+  "version": "0.1.0",
+  "description": "Interacting with Telegram",
+  "main": "telegram.js",
+  "scripts": {
+    "coveralls": "cat coverage/lcov.info | coveralls",
+    "pretest": "jshint . && jscs .",
+    "posttest": "istanbul check-coverage",
+    "test": "istanbul cover -x *.test.js _mocha -- -r should *.test.js",
+    "preversion": "npm test",
+    "postversion": "git push && git push --tags"
+  },
+  "files": [
+    "telegram.js"
+  ],
+  "author": "James D <james@jdrydn.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/car-throttle/telegram-hero.git"
+  },
+  "bugs": {
+    "url": "https://github.com/car-throttle/telegram-hero/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "api",
+    "telegram"
+  ],
+  "dependencies": {
+    "extend": "^3.0.0",
+    "request": "^2.69.0"
+  },
+  "devDependencies": {
+    "coveralls": "^2.11.4",
+    "istanbul": "^0.4.1",
+    "jscs": "^2.7.0",
+    "jshint": "^2.8.0",
+    "lodash": "^3.10.1",
+    "mocha": "^2.3.4",
+    "rewire": "^2.5.1",
+    "should": "^5.2.0",
+    "supertest": "^1.1.0"
+  }
+}
