@@ -58,7 +58,7 @@ var app = express();
 /**
  * localhost:3000/?auth=4b238abe064c9d6c860e386d8cbf8cd2
  */
-app.use('/', bodyParser.json(), telegram.api({
+app.post('/', bodyParser.json(), telegram.api({
   auth: '4b238abe064c9d6c860e386d8cbf8cd2',
   // The above string is exactly the same as the below object
   // auth: {
@@ -74,7 +74,7 @@ app.use('/', bodyParser.json(), telegram.api({
 /**
  * localhost:3000/incoming/4b238abe064c9d6c860e386d8cbf8cd2
  */
-app.use('/incoming/:key', bodyParser.json(), telegram.api({
+app.post('/incoming/:key', bodyParser.json(), telegram.api({
   auth: {
     key: '4b238abe064c9d6c860e386d8cbf8cd2',
     param: 'key'
@@ -91,7 +91,7 @@ app.use('/incoming/:key', bodyParser.json(), telegram.api({
 /**
  * localhost:3000/incoming/megaman/3788fe92142a99ab9e72274f7664bcb9
  */
-app.use('/incoming/:name/:key', bodyParser.json(), telegram.api({
+app.post('/incoming/:name/:key', bodyParser.json(), telegram.api({
   auth: function (req, res, next) {
     /**
      * This code is definitely not production-safe!
