@@ -54,89 +54,84 @@ telegram.send = function (opts, callback) {
 };
 
 telegram.api = function (opts) {
-  if (DEFAULTS.token && !opts.token) opts.token = DEFAULTS.token;
+  if (typeof opts !== 'object') throw new Error('Invalid object of options');
+  if (typeof opts.bots !== 'object') throw new TypeError('Expected an object of bots');
 
-  if (!opts.token) throw new Error('Missing token');
-  if (typeof opts.incoming !== 'function') {
-    console.error('Missing incoming function - using a default logger instead');
-    opts.incoming = function (message) {
-      console.log('Message', JSON.stringify(message, null, 2));
-    };
+  opts.bot_name_param = opts.bot_name_param || 'bot_name';
+  opts.bot_auth_param = opts.bot_auth_param || 'bot_auth';
+
+  for (var slug in opts.bots) if (opts.bots.hasOwnProperty(slug)) {
+    if (typeof opts.bots[slug] === 'string') opts.bots[slug] = { token: opts.bots[slug] };
+    if (!opts.bots[slug].token) throw new Error('Missing token for "' + slug + '" bot');
+
+    opts.bots[slug].name = opts.bots[slug].name || slug;
+    opts.bots[slug].slug = slug;
+
+    if (opts.bots[slug].auth && typeof opts.bots[slug].auth !== 'string') {
+      throw new Error('`auth` property for "' + slug + '" should be a string');
+    }
   }
 
-  if (opts.url) {
-    var setWebhookData = {};
+  return function telegramWebhook(req, res, next) {
+    var err = null;
 
-    if (typeof opts.url === 'string') setWebhookData.url = opts.url;
-    else if (opts.url && opts.url.url) {
-      setWebhookData.url = opts.url.url;
-      if (opts.url.certificate) setWebhookData.certificate = opts.url.certificate;
+    if (!req.param || !req.param[opts.bot_name_param]) {
+      err = new Error('Missing bot name in URL');
+      err.status = err.statusCode = 404;
+      return next(err);
+    }
+    if (!req.body) {
+      err = new Error('Missing body - did you parse the JSON body?');
+      err.status = err.statusCode = 500;
+      return next(err);
     }
 
-    if (typeof opts.auth === 'string') setWebhookData.url = '?auth=' + opts.auth;
+    var bot = opts.bots[req.param[opts.bot_name_param]];
+    if (!bot) {
+      err = new Error('Unknown bot "' + req.param[opts.bot_name_param] + '"');
+      err.status = err.statusCode = 404;
+      return next(err);
+    }
 
-    telegram.send({
+    if (bot.auth) {
+      if (!req.param[opts.bot_auth_param]) {
+        err = new Error('Missing bot auth in URL');
+        err.status = err.statusCode = 401;
+        return next(err);
+      }
+
+      if (bot.auth === req.param[opts.bot_auth_param]) {
+        err = new Error('Incorrect authenication token for "' + bot.slug + '" bot');
+        err.status = err.statusCode = 403;
+        return next(err);
+      }
+    }
+
+    if (
+      !req.body.message || !req.body.message.update_id || !req.body.message.message ||
+      !req.body.message.message.message_id || !req.body.message.message.from || !req.body.message.message.from.id
+    ) {
+      err = new Error('Invalid message received from Telegram');
+      err.status = err.statusCode = 400;
+      return next(err);
+    }
+
+    req.telegram = {
+      bot: bot,
+      message: req.body.message.message,
+      reply: function (message, callback) {
+        message.reply_to_message_id = req.body.message.message.message_id;
+
+        telegram.send({
+          token: bot.token,
+          to: req.body.message.message.from.id,
+          message: message
+        }, callback);
+      },
       token: opts.token,
-      method: 'setWebhook',
-      data: setWebhookData
-    }, function (err, body) {
-      if (err || (body && !body.ok && body.description)) {
-        console.error('There was an error setting the webhook automatically');
-        console.error(err || body.description);
-      }
-    });
-  }
-
-  var fns = [];
-
-  if (opts.auth) {
-    if (typeof opts.auth === 'string') opts.auth = {
-      key: opts.auth,
-      query: 'auth'
+      update_id: req.body.message.update_id
     };
 
-    if (typeof opts.auth === 'function') fns.push(opts.auth);
-    else if (typeof opts.auth !== 'object') throw new Error('`auth` property should be a string, function or object');
-    else {
-      if (opts.auth.query && opts.auth.param) throw new Error('Auth object cannot have a query and param property');
-      if (!opts.auth.key) throw new Error('Missing auth key');
-
-      var props = opts.auth.hasOwnProperty('query') ? 'query' : 'param';
-      var prop = opts.auth.hasOwnProperty('query') ? opts.auth.query : opts.auth.param;
-
-      fns.push(function (req, res, next) {
-        if (!req[props] || !req[props][prop]) next(new Error('Missing ' + props + '"' + prop + '"'));
-        else if (req[props][prop] !== opts.auth.key) next(new Error('Invalid authentication ' + props));
-        else next();
-      });
-    }
-  }
-
-  fns.push(function telegramWebhook(req, res, next) {
-    if (!req.body) return next(new Error('Missing body - did you parse the JSON body?'));
-
-    var finished = function (err, reply) {
-      if (err) next(err);
-      else if (reply) res.status(200).set('Content-Type', 'application/json').json(reply);
-      else res.status(204).send();
-    };
-
-    if (opts.incoming.length === 2) opts.incoming(req.body.message, finished);
-    else if (opts.incoming.length === 1) {
-      var err = null;
-      var reply = null;
-
-      try {
-        reply = opts.incoming(req.body.message);
-      }
-      catch (e) {
-        err = e;
-      }
-
-      finished(err, reply);
-    }
-    else finished();
-  });
-
-  return fns;
+    next();
+  };
 };

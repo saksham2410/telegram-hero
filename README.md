@@ -159,7 +159,9 @@ var CHAT_IDS = [
 var MESSAGES = [
   {
     method: 'sendMessage',
-    message: { text: 'Which picture do you like more?' }
+    message: {
+      text: 'Which picture do you like more?'
+    }
   },
   {
     method: 'sendPhoto',
@@ -191,6 +193,8 @@ async.map(CHAT_IDS, function (chat_id, nextChatId) {
 
 ## Receive Usage (with Express)
 
+By passing an object of bots, you can create a simple webhook for all of your bots!
+
 ```js
 var bodyParser = require('body-parser');
 var express = require('express');
@@ -198,35 +202,77 @@ var telegram = require('telegram-hero');
 
 var app = express();
 
-var telegramMiddleware = telegram.webhook({
-  bots: {
-    my_bot: {
-      name: 'My Bot',
-      token: '1234:ABCDEFGHIJKL',
-      auth: '4b238abe064c9d6c860e386d8cbf8cd2'
+/**
+ * http://localhost:3000/webhook/amazing-bot/4b238abe064c9d6c860e386d8cbf8cd2
+ */
+app.post(
+  '/webhook/:bot_name/:bot_auth',
+  bodyParser.json(),
+  telegram.api({
+    bots: {
+      'amazing-bot': {
+        name: 'The Amazing Bot',
+        auth: '4b238abe064c9d6c860e386d8cbf8cd2',
+        token: '<insert-this-bots-token>'
+      },
+
+      // Or, if you're lazy, you can use
+      'simple-bot': '4b238abe064c9d6c860e386d8cbf8cd2'
+      // Which will be constructed into a proper bot similar to:
+      //   'simple-bot': {
+      //     name: 'simple-bot',
+      //     token: '4b238abe064c9d6c860e386d8cbf8cd2'
+      //   }
+      // HOWEVER this isn't advised, since the authentication will be *anything* that satisfies :bot_auth!
     }
+  }),
+  function (req, res, next) {
+    // req.telegram.message is the message object.
+    // req.telegram.bot is the bot object that we passed into the middleware.
+
+    // An error with status code 403 is returned if authentication fails
+
+    // Reply to the incoming message.
+    // The bot token, chat id, and reply_to_message_id are preset.
+    telegram.reply({
+      method: 'sendMessage',
+      message: {
+        text: 'Thanks for the reply! Have a nice day'
+      }
+    });
+
+    res.status(200); // Don't forgot to reply to Telegram, so they know the message was received correctly!
   }
-});
+);
 
 /**
- * localhost:3000/webhook/my_bot/4b238abe064c9d6c860e386d8cbf8cd2
+ * If you don't want to use `:bot_name` or `:bot_auth` as params, you can instruct the middleware to use different ones
+ * like this example shows:
+ *
+ * http://localhost:3000/webhook/amazing-bot/4b238abe064c9d6c860e386d8cbf8cd2
  */
-app.post('/webhook/:bot_name/:auth', bodyParser.json(), telegramMiddleware, function (req, res, next) {
-  // req.telegram.message is the message object.
-  // req.telegram.bot is the bot object that we passed into the middleware.
-
-  // An error with status code 403 is returned if authentication fails
-
-  // Reply to the incoming message.
-  // The bot token, chat id, and reply_to_message_id are preset.
-  telegram.reply({
-    context: req.telegram,
-    method: 'sendMessage',
-    message: {
+app.post(
+  '/webhook/:telegram_bot_slug/:telegram_bot_auth',
+  bodyParser.json(),
+  telegram.api({
+    bots: {
+      'amazing-bot': {
+        name: 'The Amazing Bot',
+        auth: '4b238abe064c9d6c860e386d8cbf8cd2',
+        token: '<insert-this-bots-token>'
+      }
+    },
+    bot_name_param: 'telegram_bot_slug',
+    bot_auth_param: 'telegram_bot_auth'
+  }),
+  function (req, res, next) {
+    // Or, if you want to reply directly to Telegram, you can do so like you usually would:
+    res.status(200).json({
+      method: 'sendMessage',
       text: 'Thanks for the reply! Have a nice day'
-    }
-  });
-});
+    });
+  }
+);
 
 app.listen(3000);
 ```
