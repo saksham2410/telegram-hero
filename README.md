@@ -15,15 +15,11 @@ Most modules written for Node are built around instances, similar to:
 var bot = new TelegramBot('my-awesome-token-here');
 
 bot.sendMessage('Hello, world!', callback);
-
-bot.sendPhoto(path.join(__dirname, 'attachment1.jpg'), callback);
 ```
 
-And, whilst this is fine for a script, this isn't great for APIs. And these solutions aren't (easily) compatible with
-[the webhooks feature](https://core.telegram.org/bots/api#setwebhook) that Telegram provide.
+And, whilst this is fine for just one, or a couple of bots, it's not ideal for a service with many potential bots. And these solutions aren't very flexible when it comes to [the webhooks feature](https://core.telegram.org/bots/api#setwebhook) that Telegram bots provide.
 
-So instead, we offer this simplified module. You can use this with as many bots and as many webhooks as you like.
-Go nuts!!
+So instead, we offer this simplified module with a focus on flexibility. You can use this with as many bots and as many webhooks as you like.
 
 ## Installation
 
@@ -41,8 +37,8 @@ var telegram = require('telegram-hero');
 telegram.send({
   token: '<insert-your-bot-token>',
   to: '<insert-a-chat-id>',
+  method: 'sendMessage',
   message: {
-    method: 'sendMessage',
     text: 'This are not the droids that you are looking for, move along.'
   }
 }, callback);
@@ -53,14 +49,14 @@ interaction so much easier.
 
 You must always provide a `method`, which should be a method from the [Telegram Bot API][telegram-bot-api].
 
-Now, above is an example of the `sendMessage` method. Below is an example of a couple of other methods:
+Above is an example of the `sendMessage` method. Below is an example of a couple of other methods:
 
 ```js
 telegram.send({
   token: '<insert-your-bot-token>',
   to: '<insert-a-chat-id>',
+  method: 'sendPhoto',
   message: {
-    method: 'sendPhoto',
     photo: fs.createReadStream(path.join(__dirname, 'droids.jpeg')),
     caption: 'Optional caption for that photo'
   }
@@ -69,8 +65,8 @@ telegram.send({
 telegram.send({
   token: '<insert-your-bot-token>',
   to: '<insert-a-chat-id>',
+  method: 'sendAudio',
   message: {
-    method: 'sendAudio',
     audio: fs.createReadStream(path.join(__dirname, 'theme.mp3'))
   }
 }, callback);
@@ -91,25 +87,32 @@ var async = require('async');
 var MESSAGES = [
   {
     method: 'sendMessage',
-    text: 'Which picture do you like more?'
+    message: {
+      text: 'Which picture do you like more?'
+    }
   },
   {
     method: 'sendPhoto',
-    photo: fs.createReadStream(path.join(__dirname, 'photo1.jpg')),
-    caption: 'one'
+    message: {
+      photo: fs.createReadStream(path.join(__dirname, 'photo1.jpg')),
+      caption: 'one'
+    }
   },
   {
     method: 'sendPhoto',
-    photo: fs.createReadStream(path.join(__dirname, 'photo2.jpg')),
-    caption: 'two'
+    message: {
+      photo: fs.createReadStream(path.join(__dirname, 'photo2.jpg')),
+      caption: 'two'
+    }
   }
 ];
 
-async.map(MESSAGES, function (message, nextMessage) {
+async.map(MESSAGES, function (payload, nextMessage) {
   telegram.send({
     token: '<insert-your-bot-token>',
     to: '<insert-a-chat-id>',
-    message: message
+    method: payload.method,
+    message: payload.message
   }, nextMessage);
 }, callback);
 ```
@@ -131,8 +134,8 @@ async.map(CHAT_IDS, function (chat_id, nextChatId) {
   telegram.send({
     token: '<insert-your-bot-token>',
     to: chat_id,
+    method: 'sendMessage',
     message: {
-      method: 'sendMessage',
       text: 'Good evening! Hope you had a pleasant day!'
     }
   }, nextChatId);
@@ -153,32 +156,37 @@ var CHAT_IDS = [
 var MESSAGES = [
   {
     method: 'sendMessage',
-    text: 'Which picture do you like more?'
+    message: { text: 'Which picture do you like more?' }
   },
   {
     method: 'sendPhoto',
-    photo: fs.createReadStream(path.join(__dirname, 'photo1.jpg')),
-    caption: 'one'
+    message: {
+      photo: fs.createReadStream(path.join(__dirname, 'photo1.jpg')),
+      caption: 'one'
+    }
   },
   {
     method: 'sendPhoto',
-    photo: fs.createReadStream(path.join(__dirname, 'photo2.jpg')),
-    caption: 'two'
+    message: {
+      photo: fs.createReadStream(path.join(__dirname, 'photo2.jpg')),
+      caption: 'two'
+    }
   }
 ];
 
 async.map(CHAT_IDS, function (chat_id, nextChatId) {
-  async.map(MESSAGES, function (message, nextMessage) {
+  async.map(MESSAGES, function (payload, nextMessage) {
     telegram.send({
       token: '<insert-your-bot-token>',
       to: chat_id,
-      message: message
+      method: payload.method,
+      message: payload.message
     }, nextMessage);
   }, nextChatId);
 }, callback);
 ```
 
-## Receive Usage
+## Receive Usage (with Express)
 
 ```js
 var bodyParser = require('body-parser');
@@ -187,67 +195,35 @@ var telegram = require('telegram-hero');
 
 var app = express();
 
-/**
- * localhost:3000/?auth=4b238abe064c9d6c860e386d8cbf8cd2
- */
-app.post('/', bodyParser.json(), telegram.api({
-  auth: '4b238abe064c9d6c860e386d8cbf8cd2',
-  // The above string is exactly the same as the below object
-  // auth: {
-  //   key: '4b238abe064c9d6c860e386d8cbf8cd2',
-  //   query: 'auth'
-  // }
-  token: '123456:ABCDEFGHIJKLMNOPQ',
-  incoming: function (message, done) {
-    done(null, {
-      method: 'sendMessage',
-      text: 'So long, and thanks for all the fish!'
-    });
-  }
-}));
-
-/**
- * localhost:3000/incoming/4b238abe064c9d6c860e386d8cbf8cd2
- */
-app.post('/incoming/:key', bodyParser.json(), telegram.api({
-  auth: {
-    key: '4b238abe064c9d6c860e386d8cbf8cd2',
-    param: 'key'
-  },
-  token: '123456:ABCDEFGHIJKLMNOPQ',
-  incoming: function (message, done) {
-    done(null, {
-      method: 'sendMessage',
-      text: 'And the entry for the Earth read "Harmless".'
-    });
-  }
-}));
-
-/**
- * localhost:3000/incoming/megaman/3788fe92142a99ab9e72274f7664bcb9
- */
-app.post('/incoming/:name/:key', bodyParser.json(), telegram.api({
-  auth: function (req, res, next) {
-    /**
-     * This code is definitely not production-safe!
-     */
-    if (req.param.name !== 'megaman') {
-      return next(new Error('You\'re not Megaman :('));
+var telegramMiddleware = telegram.webhook({
+  bots: {
+    my_bot: {
+      name: 'My Bot',
+      token: '1234:ABCDEFGHIJKL',
+      auth: '4b238abe064c9d6c860e386d8cbf8cd2'
     }
-    if (req.param.key !== '3788fe92142a99ab9e72274f7664bcb9') {
-      return next(new Error('You are not Megaman :/'));
-    }
-
-    next();
-  },
-  token: '123456:ABCDEFGHIJKLMNOPQ',
-  incoming: function (message, done) {
-    done(null, {
-      method: 'sendMessage',
-      text: 'Oh no, not again!'
-    });
   }
-}));
+});
+
+/**
+ * localhost:3000/webhook/my_bot/4b238abe064c9d6c860e386d8cbf8cd2
+ */
+app.post(‘/webhook/:bot_name/:auth', bodyParser.json(), telegramMiddleware, function (req, res, next) {
+  // req.telegram.message is the message object.
+  // req.telegram.bot is the bot object that we passed into the middleware.
+
+  // An error with status code 403 is returned if authentication fails
+
+  // Reply to the incoming message.
+  // The bot token, chat id, and reply_to_message_id are preset.
+  telegram.reply({
+    context: req.telegram,
+    method: 'sendMessage',
+    message: {
+      text: 'Thanks for the reply! Have a nice day'
+    }
+  });
+});
 
 app.listen(3000);
 ```
