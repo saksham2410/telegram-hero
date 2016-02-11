@@ -208,7 +208,7 @@ var telegramMiddleware = telegram.webhook({
 /**
  * localhost:3000/webhook/my_bot/4b238abe064c9d6c860e386d8cbf8cd2
  */
-app.post(‘/webhook/:bot_name/:auth', bodyParser.json(), telegramMiddleware, function (req, res, next) {
+app.post('/webhook/:bot_name/:auth', bodyParser.json(), telegramMiddleware, function (req, res, next) {
   // req.telegram.message is the message object.
   // req.telegram.bot is the bot object that we passed into the middleware.
 
