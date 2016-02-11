@@ -5,7 +5,7 @@
 
 So, if you've ever used Telegram, you'll know how great it is to chat securely between people. And if you're a developer
 and you've checked out Telegram Bots, you'll know [there is an API](telegram-bot-api) to allow you to programmatically
-communicate with people. How awesome!!
+communicate with people.
 
 ... Well, nearly awesome.
 
@@ -17,9 +17,12 @@ var bot = new TelegramBot('my-awesome-token-here');
 bot.sendMessage('Hello, world!', callback);
 ```
 
-And, whilst this is fine for just one, or a couple of bots, it's not ideal for a service with many potential bots. And these solutions aren't very flexible when it comes to [the webhooks feature](https://core.telegram.org/bots/api#setwebhook) that Telegram bots provide.
+And, whilst this is fine for just one, or a couple of bots, it's not ideal for a service with many potential bots. And
+these solutions aren't very flexible when it comes to [the webhooks feature](https://core.telegram.org/bots/api#setwebhook)
+that Telegram bots provide.
 
-So instead, we offer this simplified module with a focus on flexibility. You can use this with as many bots and as many webhooks as you like.
+So instead, we offer this simplified module with a focus on flexibility. You can use this with as many bots and as many
+webhooks as you like.
 
 ## Installation
 
@@ -58,7 +61,7 @@ telegram.send({
   method: 'sendPhoto',
   message: {
     photo: fs.createReadStream(path.join(__dirname, 'droids.jpeg')),
-    caption: 'Optional caption for that photo'
+    caption: 'This door is locked, move onto the next one'
   }
 }, callback);
 
@@ -208,7 +211,7 @@ var telegramMiddleware = telegram.webhook({
 /**
  * localhost:3000/webhook/my_bot/4b238abe064c9d6c860e386d8cbf8cd2
  */
-app.post(‘/webhook/:bot_name/:auth', bodyParser.json(), telegramMiddleware, function (req, res, next) {
+app.post('/webhook/:bot_name/:auth', bodyParser.json(), telegramMiddleware, function (req, res, next) {
   // req.telegram.message is the message object.
   // req.telegram.bot is the bot object that we passed into the middleware.
 
