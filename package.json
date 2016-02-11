@@ -25,7 +25,9 @@
   "license": "MIT",
   "keywords": [
     "api",
-    "telegram"
+    "bot",
+    "telegram",
+    "webhook"
   ],
   "dependencies": {
     "request": "^2.69.0"

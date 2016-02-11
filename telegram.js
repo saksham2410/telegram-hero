@@ -12,7 +12,6 @@ telegram.configure = function (opts) {
 
 var extendOmit = function (omit_props) {
   var base_obj = {};
-  omit_props = Array.isArray(omit_props) ? omit_props : [ omit_props ];
 
   for (var i = 1; i < arguments.length; i++) if (arguments[i]) {
     for (var prop in arguments[i]) if (arguments[i].hasOwnProperty(prop) && omit_props.indexOf(prop) < 0) {
@@ -43,7 +42,7 @@ telegram.send = function (opts, callback) {
       'Accept': 'application/json'
     },
     json: true,
-    formData: extendOmit('method', opts.message, {
+    formData: extendOmit([ 'method' ], opts.message, {
       chat_id: opts.to
     })
   }, function (err, res, body) {
