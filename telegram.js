@@ -74,7 +74,7 @@ telegram.api = function (opts) {
     var bot = null;
     var err = null;
 
-    if (!req.param || !req.param[opts.bot_name_param]) {
+    if (!req.params || !req.params[opts.bot_name_param]) {
       err = new Error('Missing bot name in URL');
       err.status = err.statusCode = 404;
       return next(err);
@@ -96,21 +96,21 @@ telegram.api = function (opts) {
     }
 
     if (req.telegram_bot) bot = req.telegram_bot;
-    else if (opts.bots) bot = opts.bots[req.param[opts.bot_name_param]];
+    else if (opts.bots) bot = opts.bots[req.params[opts.bot_name_param]];
     if (!bot) {
-      err = new Error('Unknown bot "' + req.param[opts.bot_name_param] + '"');
+      err = new Error('Unknown bot "' + req.params[opts.bot_name_param] + '"');
       err.status = err.statusCode = 404;
       return next(err);
     }
 
     if (bot && bot.auth) {
-      if (!req.param[opts.bot_auth_param]) {
+      if (!req.params[opts.bot_auth_param]) {
         err = new Error('Missing bot auth in URL');
         err.status = err.statusCode = 401;
         return next(err);
       }
 
-      if (bot.auth === req.param[opts.bot_auth_param]) {
+      if (bot.auth === req.params[opts.bot_auth_param]) {
         err = new Error('Incorrect authenication token for "' + bot.slug + '" bot');
         err.status = err.statusCode = 403;
         return next(err);
