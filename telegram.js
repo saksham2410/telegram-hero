@@ -87,15 +87,15 @@ telegram.api = function (opts) {
     }
 
     if (
-      !req.body.message || !req.body.message.update_id || !req.body.message.message ||
-      !req.body.message.message.message_id || !req.body.message.message.from || !req.body.message.message.from.id
+      !req.body || !req.body.update_id || !req.body.message ||
+      !req.body.message.message_id || !req.body.message.from || !req.body.message.from.id
     ) {
       err = new Error('Invalid message received from Telegram');
       err.status = err.statusCode = 400;
       return next(err);
     }
 
-    if (req.telegram_bot) bot = req.telegram_bot;
+    if (req.telegram && req.telegram.bot) bot = req.telegram.bot;
     else if (opts.bots) bot = opts.bots[req.params[opts.bot_name_param]];
     if (!bot) {
       err = new Error('Unknown bot "' + req.params[opts.bot_name_param] + '"');
@@ -119,17 +119,17 @@ telegram.api = function (opts) {
 
     req.telegram = {
       bot: bot,
-      message: req.body.message.message,
+      message: req.body.message,
       token: opts.token,
-      update_id: req.body.message.update_id
+      update_id: req.body.update_id
     };
 
     req.telegram.reply = function (method, message, callback) {
-      message.reply_to_message_id = req.body.message.message.message_id;
+      message.reply_to_message_id = req.body.message.message_id;
 
       telegram.send({
         token: req.telegram.bot.token,
-        to: req.body.message.message.from.id,
+        to: req.body.message.from.id,
         method: method,
         message: message
       }, callback);
