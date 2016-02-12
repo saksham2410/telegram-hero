@@ -26,7 +26,7 @@ telegram.send = function (opts, callback) {
   if (!opts.to) return callback(new Error('Missing `to` property'));
 
   if (!opts.method) return callback(new Error('Missing `method` property'));
-  if (typeof opts.message.method !== 'string') return callback(new Error('Incorrect type for `message` property'));
+  if (typeof opts.method !== 'string') return callback(new Error('Incorrect type for `method` property'));
   if (!opts.message) return callback(new Error('Missing `message` property'));
   if (typeof opts.message !== 'object') return callback(new Error('Incorrect type for `message` property'));
 
