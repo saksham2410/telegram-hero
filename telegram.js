@@ -111,7 +111,7 @@ telegram.api = function (opts) {
         return next(err);
       }
 
-      if (bot.auth === req.params[opts.bot_auth_param]) {
+      if (bot.auth !== req.params[opts.bot_auth_param]) {
         err = new Error('Incorrect authenication token for "' + bot.slug + '" bot');
         err.status = err.statusCode = 403;
         return next(err);
