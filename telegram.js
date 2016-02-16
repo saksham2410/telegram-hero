@@ -52,8 +52,8 @@ telegram.api = function (opts) {
   opts = opts || {};
   if (typeof opts !== 'object') throw new Error('Invalid object of options');
 
-  opts.bot_name_param = opts.bot_name_param || 'bot_name';
-  opts.bot_auth_param = opts.bot_auth_param || 'bot_auth';
+  if (!opts.hasOwnProperty('bot_name_param')) opts.bot_name_param = 'bot_name';
+  if (!opts.hasOwnProperty('bot_auth_param')) opts.bot_auth_param = 'bot_auth';
 
   if (opts.bots && typeof opts.bots === 'object') {
     for (var slug in opts.bots) if (opts.bots.hasOwnProperty(slug)) {
@@ -74,7 +74,8 @@ telegram.api = function (opts) {
     var bot = null;
     var err = null;
 
-    if (!req.params || !req.params[opts.bot_name_param]) {
+    req.params = req.params || {};
+    if (opts.bot_name_param && !req.params[opts.bot_name_param]) {
       err = new Error('Missing bot name in URL');
       err.status = err.statusCode = 404;
       return next(err);
@@ -103,7 +104,7 @@ telegram.api = function (opts) {
       return next(err);
     }
 
-    if (bot && bot.auth) {
+    if (opts.bot_auth_param && bot && bot.auth) {
       if (!req.params[opts.bot_auth_param]) {
         err = new Error('Missing bot auth in URL');
         err.status = err.statusCode = 401;
